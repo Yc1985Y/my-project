@@ -1,3 +1,6 @@
+# 修复API版本兼容问题
+#!/usr/bin/env python3
+...
 #!/usr/bin/env python3
 """Qwen API 调用示例 - 对话机器人"""
 import requests
