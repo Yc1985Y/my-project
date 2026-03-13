@@ -84,3 +84,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+# AI协助修复：兼容Python3.8 + requests库
