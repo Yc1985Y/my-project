@@ -114,6 +114,24 @@ def save_results(results: List[Dict], output_file: str) -> None:
     if path.suffix == '.json':
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(results, f, ensure_ascii=False, indent=2)
+    elif path.suffix == '.md':
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write("# Qwen API 批量对话测试结果\n\n")
+            f.write(f"**生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            f.write(f"**总计**: {len(results)} 个问题 | ")
+            f.write(f"**成功**: {sum(1 for r in results if r['success'])} | ")
+            f.write(f"**失败**: {sum(1 for r in results if not r['success'])}\n\n")
+            f.write("---\n\n")
+            
+            for result in results:
+                status = "✅" if result['success'] else "❌"
+                f.write(f"## {status} 问题 {result['index']}\n\n")
+                f.write(f"**问题**: {result['question']}\n\n")
+                if result['success']:
+                    f.write(f"**回答**:\n\n{result['answer']}\n\n")
+                else:
+                    f.write(f"**错误**: {result['error']}\n\n")
+                f.write("---\n\n")
     else:
         with open(path, 'w', encoding='utf-8') as f:
             f.write(f"批量测试结果 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -139,6 +157,7 @@ def main():
         epilog="""
 示例用法:
   python qwen_batch_test.py -q questions.txt -o results.json
+  python qwen_batch_test.py -q questions.txt -o results.md
   python qwen_batch_test.py -q "问题 1" "问题 2" -o results.txt
   python qwen_batch_test.py -q questions.txt --history
   python qwen_batch_test.py -q questions.txt --delay 1
@@ -148,7 +167,7 @@ def main():
     parser.add_argument('-q', '--questions', nargs='+', required=True,
                         help='问题文件路径 或 直接指定问题列表')
     parser.add_argument('-o', '--output', default=None,
-                        help='输出文件路径（支持 .json 或 .txt 格式）')
+                        help='输出文件路径（支持 .json / .md / .txt 格式）')
     parser.add_argument('--history', action='store_true',
                         help='保存对话历史，启用多轮对话模式')
     parser.add_argument('--delay', type=float, default=0,
