@@ -41,7 +41,7 @@ def run_batch_test(
     questions: List[str],
     output_file: Optional[str] = None,
     save_history: bool = False,
-    delay_between_requests: float = 0,
+    delay_between_requests: float = 0.5,
 ) -> List[Dict]:
     """运行批量测试"""
     import time
@@ -54,7 +54,7 @@ def run_batch_test(
     
     for index, question in enumerate(questions, 1):
         q_preview = question[:50] + '...' if len(question) > 50 else question
-        print(f"\n[{index}/{len(questions)}] 问题：{q_preview}")
+        print(f"[{index}/{len(questions)}] {q_preview}", end=" ... ", flush=True)
         
         result = {
             'index': index,
@@ -65,9 +65,8 @@ def run_batch_test(
             'timestamp': datetime.now().isoformat()
         }
         
+        start = time.time()
         try:
-            print("  正在调用 API...", end="", flush=True)
-            
             if save_history:
                 answer = chat_with_qwen(question, history)
                 history.extend([
@@ -77,28 +76,33 @@ def run_batch_test(
             else:
                 answer = chat_with_qwen(question)
             
+            elapsed = time.time() - start
             result['answer'] = answer
             result['success'] = True
+            result['elapsed'] = round(elapsed, 2)
             
-            print("\r  OK 完成          ")
-            ans_preview = answer[:80] + '...' if len(answer) > 80 else answer
-            print(f"  回答：{ans_preview}")
+            print(f"OK ({elapsed:.1f}s)")
             
         except QwenAPIError as e:
+            elapsed = time.time() - start
             result['error'] = str(e)
-            print(f"\r  XX 失败：{e}            ")
+            result['elapsed'] = round(elapsed, 2)
+            print(f"FAILED: {e}")
         except Exception as e:
+            elapsed = time.time() - start
             result['error'] = f"未知错误：{e}"
-            print(f"\r  XX 异常：{e}            ")
+            result['elapsed'] = round(elapsed, 2)
+            print(f"ERROR: {e}")
         
         results.append(result)
         
         if delay_between_requests > 0 and index < len(questions):
             time.sleep(delay_between_requests)
     
-    print("\n" + "=" * 60)
+    print("=" * 60)
     success_count = sum(1 for r in results if r['success'])
-    print(f"批量测试完成：成功 {success_count}/{len(questions)}")
+    total_time = sum(r.get('elapsed', 0) for r in results)
+    print(f"完成：成功 {success_count}/{len(questions)} | 总耗时 {total_time:.1f}s")
     
     if output_file:
         save_results(results, output_file)
@@ -156,11 +160,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例用法:
-  python qwen_batch_test.py -q questions.txt -o results.json
   python qwen_batch_test.py -q questions.txt -o results.md
-  python qwen_batch_test.py -q "问题 1" "问题 2" -o results.txt
+  python qwen_batch_test.py -q questions.txt -o results.json
+  python qwen_batch_test.py -q "问题 1" "问题 2" -o test.md
   python qwen_batch_test.py -q questions.txt --history
-  python qwen_batch_test.py -q questions.txt --delay 1
+  python qwen_batch_test.py -q questions.txt --delay 2
         """
     )
     
@@ -170,8 +174,8 @@ def main():
                         help='输出文件路径（支持 .json / .md / .txt 格式）')
     parser.add_argument('--history', action='store_true',
                         help='保存对话历史，启用多轮对话模式')
-    parser.add_argument('--delay', type=float, default=0,
-                        help='请求间隔时间（秒），默认 0')
+    parser.add_argument('--delay', type=float, default=0.5,
+                        help='请求间隔时间（秒），默认 0.5')
     
     args = parser.parse_args()
     
