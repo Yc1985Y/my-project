@@ -1,1 +1,26 @@
+# AI Assistant Deployment Dependencies
+# Flask Web Framework
 Flask>=2.3.0
+
+# CORS Support
+flask-cors>=4.0.0
+
+# WSGI HTTP Server (Production)
+gunicorn>=21.0.0
+
+# Environment Variables Management
+python-dotenv>=1.0.0
+
+# HTTP Client for API Calls
+requests>=2.31.0
+
+# Development & Testing (optional)
+pytest>=7.4.0
+pytest-flask>=1.2.0
+
+# Code Quality (optional)
+flake8>=6.1.0
+black>=23.0.0
+
+# Monitoring & Logging (optional for production)
+watchdog>=3.0.0
